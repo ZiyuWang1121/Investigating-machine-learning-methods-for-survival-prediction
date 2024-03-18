@@ -1,4 +1,4 @@
-# STAT3799_2024_IndividualProject
+# STAT3799_2024_Individual Project
 
 Capstone project for HKU course STAT3799 Directed studies in statistics (2024 sem2, Supervisor: Dr. Y. Gu)  
 
@@ -13,7 +13,7 @@ Capstone project for HKU course STAT3799 Directed studies in statistics (2024 se
 - Data source (only consider mRNA now)
 - Proposal
 - Data preprocessing
-- fix models as the email suggestion
+- fix models (email suggestion)
 - Training
 
 ## Assessment
