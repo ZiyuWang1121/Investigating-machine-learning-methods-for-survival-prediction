@@ -1,6 +1,6 @@
 # STAT3799_2024_Individual Project
 
-Capstone project for HKU course STAT3799 Directed studies in statistics (2024 sem2, Supervisor: Dr. Y. Gu)  
+Capstone project for HKU course STAT3799 Directed studies in statistics (2024 sem 2, Supervisor: Dr. Y. Gu)  
 
 ## Timeline
 - Poster Presentation: April 16, 2024 (Tuesday), 3:30 pm – 5:30 pm (Foyer of the Faculty Office, G/F, CYMP)
