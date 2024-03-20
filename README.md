@@ -11,7 +11,7 @@ Capstone project for HKU course STAT3799 Directed studies in statistics (2024 se
 
 ## To-do list
 - Data source (only consider mRNA now)
-- remove col all with NA, remove row with too much NA, etc
+- remove col all with NA, remove the row with too much NA, etc
 - Proposal
 - Data preprocessing
 - fix models (email suggestion)
