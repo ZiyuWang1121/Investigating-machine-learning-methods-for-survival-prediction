@@ -12,9 +12,14 @@ set.seed(0)
 
 # Load data
 brca <- read.csv("brca.csv")
+#brca <- read.csv("brca_filtered.csv")
 
 # Split the data into train/test sets
-train <- sample(1:nrow(brca), round(nrow(brca) * 0.80))
+#train <- sample(1:nrow(brca), round(nrow(brca) * 0.80))
+
+# 80% for training
+# By default, createDataPartition does a stratified random split of the data.
+train <- createDataPartition(brca$status, p = 0.8, list = FALSE)
 data_train_orign <- brca[train, ]
 data_test_orign <- brca[-train, ]
 
@@ -161,24 +166,3 @@ boxplot(cindex_results, main = "Distribution of C-index over 20 Replicates")
 
 # Plot boxplot of Integrated Brier score
 boxplot(integrated_brier_scores, main = "Distribution of Integrated Brier Score")
-
-###############################################################################
-
-# Fit Cox proportional hazards model for baseline comparison
-coxphFit <- coxph(Surv(time, status) ~ ., data = data_train,x=TRUE)
-
-# Summary of Cox proportional hazards model
-summary(coxphFit)
-
-pred_cox_train <- predict(coxphFit, data_train)
-# Calculate C-index for the Cox proportional hazards model on the training set
-cindex_cox_train <- get.cindex(data_train$time, data_train$status, -pred_cox_train)
-round(cindex_cox_train,3)
-
-# Make predictions on the test set using the Cox model
-pred_cox_test <- predict(coxphFit, newdata = data_test, type = "lp")
-cindex_cox_test <- get.cindex(data_test$time, data_test$status, -pred_cox_test)
-round(cindex_cox_test,3)
-
-ibs_cox <- integrated_brier_score(data_test$status, surv = pred_cox_test, times = data_test$time)
-
