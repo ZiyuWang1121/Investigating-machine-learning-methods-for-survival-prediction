@@ -10,12 +10,8 @@ Capstone project for HKU course STAT3799 Directed studies in statistics (2024 se
 - Written report submission: 3 days after the oral presentation (submit 2 hard copies to the department by the deadline, also through Moodle Turnitin)
 
 ## To-do list
-- Data source (only consider mRNA now)
-- remove col all with NA, remove the row with too much NA, etc
-- Proposal
-- Data preprocessing
-- fix models (email suggestion)
-- Training
+- update EDA and Deepsurv
+- Evaluation of survival svm
 
 ## Assessment
 - Written report (60%) – 10,000 words,
