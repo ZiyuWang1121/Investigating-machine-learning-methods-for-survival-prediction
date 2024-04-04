@@ -176,7 +176,8 @@ calculate_pred_error <- function(final_model, data_test, time_cutoff = 1826.25) 
   }
   
   pred_error <- up_sum / low_sum
-  return(pred_error)
+  
+  return(list(rmst, pred_error))
 }
 
 calc_ibs <- function(final_model, data_test) {
@@ -232,7 +233,7 @@ for (i in 1:20) {
   integrated_brier_scores[i] <- ibs
   
   # Calculate prediction error
-  pred_error <- calculate_pred_error(final_model, data_test)
+  pred_error <- calculate_pred_error(final_model, data_test)[[2]]
   prediction_error_results[i] <- pred_error
 }
 

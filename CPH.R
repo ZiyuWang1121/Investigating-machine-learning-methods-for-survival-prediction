@@ -2,7 +2,6 @@
 library('survival')
 library(survex)
 library(caret)
-library('randomForestSRC')
 library(Hmisc)
 
 # set random state
@@ -102,7 +101,7 @@ calculate_pred_error <- function(coxphFit, data_test, time_cutoff = 1826.25) {
   }
   
   pred_error <- up_sum / low_sum
-  return(pred_error)
+  return(list(rmst, pred_error))
 }
 
 calc_ibs <- function(coxphFit, data_test) {
@@ -149,7 +148,7 @@ for (i in 1:20) {
   ibs_results[i] <- ibs
   
   # Calculate prediction error
-  pred_error <- calculate_pred_error(coxphFit, data_test)
+  pred_error <- calculate_pred_error(coxphFit, data_test)[[2]]
   prediction_error_results[i] <- pred_error
 }
 
