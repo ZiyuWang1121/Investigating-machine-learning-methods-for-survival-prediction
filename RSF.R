@@ -63,6 +63,8 @@ data_test_pca <- predict(pca, data_test_orign[, -c(1,2)])
 data_train = cbind(data_train_orign[, c(1, 2)], data_train_pca[, 1:num_components])
 data_test = cbind(data_test_orign[, c(1, 2)], data_test_pca[, 1:num_components])
 
+################################################################################
+# Parameter tunning
 
 # Initialize variables to store results
 cindex_scores <- c() 
@@ -95,8 +97,7 @@ for (i in 1:5) {
                    nodesize = tuned_model$optimal[1])
     
     # Evaluate model on fold validation data: Concordance Index
-    pred <- predict(model, fold_valid)
-    cindex <- get.cindex(fold_valid$time, fold_valid$status, -pred$predicted)
+    cindex <- get.cindex(model$yvar[,1], model$yvar[,2], model$predicted.oob)
     cindex_fold_scores <- c(cindex_fold_scores, cindex)
     
     # Check if current C-index is the best so far
@@ -114,12 +115,98 @@ for (i in 1:5) {
 cat("Best c-index:", best_cindex, "\n")
 cat("Corresponding parameters: mtry =", best_params$mtry, ", nodesize =", best_params$nodesize, "\n")
 
+################################################################################
+# Define evaluation metrics
+
+# Define function for calculating prediction error for 5-year RMST
+calculate_pred_error <- function(final_model, data_test, time_cutoff = 1826.25) {
+  # Calculate survival probabilities
+  pred <- predict(final_model, data_test)
+  surv <- pred$survival
+  
+  # Calculate RMST
+  rmst_i <- data.frame(matrix(ncol = 0, nrow = 0))
+  
+  time_list <- c()
+  
+  for (i in pred$time) {
+    if (i <= (time_cutoff + 1)) {
+      time_list <- c(time_list, i)
+    }
+  }
+  
+  for (i in 1:(length(time_list) - 1)) {
+    t <- time_list[i]
+    t_plus_1 <- time_list[i + 1]
+    row_num <- which(pred$time == t)
+    s_t <- pred$survival[, row_num]
+    mu <- (t_plus_1 - t) * s_t
+    
+    # Append mu to rmst_i
+    rmst_i <- rbind(rmst_i, mu)
+  }
+  
+  rmst <- data.frame(matrix(0, nrow = 1, ncol = ncol(rmst_i)))
+  colnames(rmst) <- colnames(rmst_i)
+  for (i in 1:ncol(rmst_i)) {
+    rmst[1, i] <- sum(rmst_i[, i])
+  }
+  
+  rmst.T <- t(rmst)
+  
+  test <- data_test[, c(1, 2)]
+  row.names(test) <- NULL
+  test$rmst <- rmst.T
+  
+  # Kaplan-Meier estimator of the censoring distribution
+  fit <- survfit(Surv(test$time, 1 - test$status) ~ 1)
+  cen <- fit$surv
+  cen_df <- data.frame(time = fit$time, KM_estimate = cen)
+  
+  up_sum <- 0
+  low_sum <- 0
+  
+  for (i in 1:nrow(test)) {
+    if (test$time[i] <= time_cutoff) {
+      up <- (1 / cen_df[cen_df$time == test$time[i], 'KM_estimate']) * test$status[i] * abs(test$time[i] - test$rmst[i])
+      low <- (1 / cen_df[cen_df$time == test$time[i], 'KM_estimate']) * test$status[i]
+      up_sum <- up_sum + up
+      low_sum <- low_sum + low
+    }
+  }
+  
+  pred_error <- up_sum / low_sum
+  return(pred_error)
+}
+
+calc_ibs <- function(final_model, data_test) {
+  # Extract the explanatory variables from the test dataset
+  test_data_explanatory <- data_test[, !names(data_test) %in% c("time", "status")]
+  
+  # Predict survival probabilities for the test dataset
+  rsf_exp <- explain(final_model)
+  surv <- rsf_exp$predict_survival_function(final_model, test_data_explanatory, times = rsf_exp$times)
+  
+  # Extract the actual survival times and censoring indicators from the test dataset
+  y <- Surv(data_test$time, data_test$status)
+  
+  # Calculate the integrated Brier score to evaluate the model on the test set
+  ibs <- integrated_brier_score(y, surv = surv, times = rsf_exp$times)
+  
+  # Return the integrated Brier score
+  return(ibs)
+}
+
+################################################################################
+# Evaluation and Prediction
 
 # Initialize vectors to store results
 cindex_results <- numeric(20)
 #brier_scores <- numeric(20)
 integrated_brier_scores <- numeric(20)
+prediction_error_results <- numeric(20)
 
+# mtry = 103, nodesize = 20
 for (i in 1:20) {
   # Refit model to all training data using optimal parameters
   final_model <- rfsrc(Surv(time, status) ~ .,
@@ -133,20 +220,20 @@ for (i in 1:20) {
   
   # Make prediction on test set and c-index for evaluation
   pred_test <- predict(final_model, data_test)
-  cindex_test <- get.cindex(data_test$time, data_test$status, -pred_test$predicted)
+  cindex_test <- get.cindex(final_model$yvar[,1], final_model$yvar[,2], final_model$predicted.oob)
   cindex_results[i] <- cindex_test
   
   # Calculate Brier score by Kaplan-Meier method
   #bs_km <- get.brier.survival(final_model, cens.model = "km")$brier.score
   #brier_scores[i] <- bs_km
   
-  # Calculate integrated Brier score
-  model_exp <- explain(final_model)
-  y <- model_exp$y
-  times <- model_exp$times
-  surv <- model_exp$predict_survival_function(final_model,  model_exp$data, times)
-  ibs <- integrated_brier_score(y, surv = surv, times = times)
+  # Calculate IBS
+  ibs <- calc_ibs(final_model, data_test)
   integrated_brier_scores[i] <- ibs
+  
+  # Calculate prediction error
+  pred_error <- calculate_pred_error(final_model, data_test)
+  prediction_error_results[i] <- pred_error
 }
 
 # Calculate mean c-index
@@ -157,12 +244,25 @@ mean_cindex
 mean_ibs <- mean(integrated_brier_scores)
 mean_ibs
 
+mean_pred_error <- mean(prediction_error_results)
+mean_pred_error
 
 # Plot boxplot of c-index
 boxplot(cindex_results, main = "Distribution of C-index over 20 Replicates")
 
 # Plot boxplot of Brier score
-#boxplot(brier_scores, main = "Distribution of Brier Scoreover 20 Replicates")
+#boxplot(brier_scores, main = "Distribution of Brier Score over 20 Replicates")
 
 # Plot boxplot of Integrated Brier score
 boxplot(integrated_brier_scores, main = "Distribution of Integrated Brier Score")
+
+# Plot boxplot of prediction error
+boxplot(prediction_error_results, main = "Distribution of Prediction Error over 20 Replicates")
+
+# Combine the lists into one string
+combined_data <- paste("c_index_scores:\n", paste(cindex_results, collapse = ", "), "\n\n",
+                       "integrated_brier_scores:\n", paste(integrated_brier_scores, collapse = ", "), "\n\n",
+                       "prediction_error:\n", paste(prediction_error_results, collapse = ", "), sep = "")
+
+# Save the combined data to a text file
+writeLines(combined_data, "RSF_scores.txt")
