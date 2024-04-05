@@ -135,6 +135,10 @@ calculate_pred_error <- function(final_model, data_test, time_cutoff = 1826.25) 
     }
   }
   
+  if (!(time_cutoff %in% time_list)) {
+    time_list <- c(time_list, time_cutoff)
+  }
+  
   for (i in 1:(length(time_list) - 1)) {
     t <- time_list[i]
     t_plus_1 <- time_list[i + 1]
@@ -157,22 +161,47 @@ calculate_pred_error <- function(final_model, data_test, time_cutoff = 1826.25) 
   test <- data_test[, c(1, 2)]
   row.names(test) <- NULL
   test$rmst <- rmst.T
+  test <- test[test$time <= time_cutoff, ]
+  
+  train <- data_train[, c(1, 2)]
+  train <- train[train$time <= time_cutoff, ]
   
   # Kaplan-Meier estimator of the censoring distribution
-  fit <- survfit(Surv(test$time, 1 - test$status) ~ 1)
-  cen <- fit$surv
-  cen_df <- data.frame(time = fit$time, KM_estimate = cen)
+  # fitted to training dataset
+  kmf <- survfit(Surv(train$time, 1 - train$status) ~ 1)
+  
+  cen <- data.frame(time = kmf$time, surv_prob = kmf$surv)
+  cen <- cen[cen$time <= time_cutoff, ]
+  
+  # Calculate the time intervals col
+  cen$interval <- cbind(cen$time, c(cen$time[-1], time_cutoff))
+  
+  survival_probabilities <- c()
+  
+  # Iterate over each time point
+  for (i in test$time) {
+    # Find the corresponding interval in the 'interval' column of 'cen'
+    for (j in 1:nrow(cen)) {
+      if (i >= cen$interval[j, 1] && i < cen$interval[j, 2]) {
+        # Append the survival probability to the list
+        survival_probabilities <- c(survival_probabilities, cen$surv_prob[j])
+        break
+      }
+    }
+  }
+  
+  # Add the list of survival probabilities as a new column to the DataFrame
+  test$KM_estimate <- survival_probabilities
   
   up_sum <- 0
   low_sum <- 0
   
   for (i in 1:nrow(test)) {
-    if (test$time[i] <= time_cutoff) {
-      up <- (1 / cen_df[cen_df$time == test$time[i], 'KM_estimate']) * test$status[i] * abs(test$time[i] - test$rmst[i])
-      low <- (1 / cen_df[cen_df$time == test$time[i], 'KM_estimate']) * test$status[i]
-      up_sum <- up_sum + up
-      low_sum <- low_sum + low
-    }
+    # 5-year RMST prediction error
+    up <- (1 / test$KM_estimate[i]) * test$status[i] * abs(test$time[i] - test$rmst[i])
+    low <- (1 / test$KM_estimate[i]) * test$status[i]
+    up_sum <- up_sum + up
+    low_sum <- low_sum + low
   }
   
   pred_error <- up_sum / low_sum
@@ -181,18 +210,11 @@ calculate_pred_error <- function(final_model, data_test, time_cutoff = 1826.25) 
 }
 
 calc_ibs <- function(final_model, data_test) {
-  # Extract the explanatory variables from the test dataset
-  test_data_explanatory <- data_test[, !names(data_test) %in% c("time", "status")]
-  
-  # Predict survival probabilities for the test dataset
-  rsf_exp <- explain(final_model)
-  surv <- rsf_exp$predict_survival_function(final_model, test_data_explanatory, times = rsf_exp$times)
-  
   # Extract the actual survival times and censoring indicators from the test dataset
   y <- Surv(data_test$time, data_test$status)
   
   # Calculate the integrated Brier score to evaluate the model on the test set
-  ibs <- integrated_brier_score(y, surv = surv, times = rsf_exp$times)
+  ibs <- integrated_brier_score(y, surv = cbind(pred_test$survival, pred_test$survival.oob), times = pred_test$time.interest)
   
   # Return the integrated Brier score
   return(ibs)
@@ -261,9 +283,10 @@ boxplot(integrated_brier_scores, main = "Distribution of Integrated Brier Score"
 boxplot(prediction_error_results, main = "Distribution of Prediction Error over 20 Replicates")
 
 # Combine the lists into one string
-combined_data <- paste("c_index_scores:\n", paste(cindex_results, collapse = ", "), "\n\n",
-                       "integrated_brier_scores:\n", paste(integrated_brier_scores, collapse = ", "), "\n\n",
-                       "prediction_error:\n", paste(prediction_error_results, collapse = ", "), sep = "")
+combined_data <- paste("# RSF\n",
+                       "rsf_c_index=[", paste(cindex_results, collapse = ", "), "]\n",
+                       "rsf_ibs=[", paste(integrated_brier_scores, collapse = ", "), "]\n",
+                       "rsf_pe=[", paste(prediction_error_results, collapse = ", "),"]", sep = "")
 
 # Save the combined data to a text file
 writeLines(combined_data, "RSF_scores.txt")
