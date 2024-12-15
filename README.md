@@ -6,8 +6,6 @@
 - ✅ [Report](https://github.com/ZiyuWang1121/Investigating-machine-learning-methods-for-survival-prediction/blob/main/Report.pdf)
 - ✅ [Oral Presentation](https://github.com/ZiyuWang1121/Investigating-machine-learning-methods-for-survival-prediction/blob/main/Oral%20Presentation.pdf)
 - ✅ [Poster Presentation](https://github.com/ZiyuWang1121/Investigating-machine-learning-methods-for-survival-prediction/blob/main/Poster%20Presentation.pdf)
-- Poster Presentation: April 16, 2024 (Tuesday), 3:30 pm – 5:30 pm (Foyer of the Faculty Office, G/F, CYMP)
-- Research Colloquium: April 24, 2024 (Wednesday), 3:30 pm – 5:30 pm at LE6, LG2/F
 
 ## Assessment
 - Written report (60%) – 10,000 words,
