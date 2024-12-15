@@ -1,13 +1,13 @@
 # STAT3799_2024_Individual Project
+- Individual project for the HKU course STAT3799 Directed Studies in Statistics (2024 Sem 2, Supervisor: Dr. Y. Gu)
+- Nominated for Poster Presentation at the HKU Research Colloquium and EAC-ISBA Conference
 
-Capstone project for HKU course STAT3799 Directed studies in statistics (2024 sem 2, Supervisor: Dr. Y. Gu)  
-
-## Timeline
+## Assessment
+- ✅ [Report](https://github.com/ZiyuWang1121/Investigating-machine-learning-methods-for-survival-prediction/blob/main/Report.pdf)
+- ✅ [Oral Presentation](https://github.com/ZiyuWang1121/Investigating-machine-learning-methods-for-survival-prediction/blob/main/Oral%20Presentation.pdf)
+- ✅ [Poster Presentation](https://github.com/ZiyuWang1121/Investigating-machine-learning-methods-for-survival-prediction/blob/main/Poster%20Presentation.pdf)
 - Poster Presentation: April 16, 2024 (Tuesday), 3:30 pm – 5:30 pm (Foyer of the Faculty Office, G/F, CYMP)
 - Research Colloquium: April 24, 2024 (Wednesday), 3:30 pm – 5:30 pm at LE6, LG2/F
-
-- Oral Presentation: April 29, 2024
-- Written report submission: 3 days after the oral presentation (submit 2 hard copies to the department by the deadline, also through Moodle Turnitin)
 
 ## Assessment
 - Written report (60%) – 10,000 words,
